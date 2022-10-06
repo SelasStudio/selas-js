@@ -36,6 +36,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.createSelasClient = exports.SelasClient = void 0;
 var supabase_js_1 = require("@supabase/supabase-js");
 var SelasClient = /** @class */ (function () {
     function SelasClient(supabase) {
@@ -58,7 +59,7 @@ var SelasClient = /** @class */ (function () {
             var _a, data, error;
             return __generator(this, function (_b) {
                 switch (_b.label) {
-                    case 0: return [4 /*yield*/, this.supabase.from("customers").select("*").eq("external_id", external_id)];
+                    case 0: return [4 /*yield*/, this.supabase.from('customers').select('*').eq('external_id', external_id)];
                     case 1:
                         _a = _b.sent(), data = _a.data, error = _a.error;
                         if (error) {
@@ -103,14 +104,20 @@ var SelasClient = /** @class */ (function () {
             var _a, data, error;
             return __generator(this, function (_b) {
                 switch (_b.label) {
-                    case 0: return [4 /*yield*/, this.supabase.rpc("provide_credits_to_customer", { p_external_id: external_id, p_nb_credits: credits })];
+                    case 0: return [4 /*yield*/, this.supabase.rpc('provide_credits_to_customer', {
+                            p_external_id: external_id,
+                            p_nb_credits: credits,
+                        })];
                     case 1:
                         _a = _b.sent(), data = _a.data, error = _a.error;
                         if (error) {
                             return [2 /*return*/, { error: error.message }];
                         }
                         else {
-                            return [2 /*return*/, { data: { current_balance: data }, message: "Added ".concat(credits, " credits to customer ").concat(external_id, ". Current balance: ").concat(data, " credits") }];
+                            return [2 /*return*/, {
+                                    data: { current_balance: data },
+                                    message: "Added ".concat(credits, " credits to customer ").concat(external_id, ". Current balance: ").concat(data, " credits"),
+                                }];
                         }
                         return [2 /*return*/];
                 }
@@ -120,12 +127,17 @@ var SelasClient = /** @class */ (function () {
     SelasClient.prototype.createToken = function (external_id, quota, ttl, description) {
         if (quota === void 0) { quota = 1; }
         if (ttl === void 0) { ttl = 60; }
-        if (description === void 0) { description = ""; }
+        if (description === void 0) { description = ''; }
         return __awaiter(this, void 0, void 0, function () {
             var _a, data, error, token;
             return __generator(this, function (_b) {
                 switch (_b.label) {
-                    case 0: return [4 /*yield*/, this.supabase.rpc("create_token", { target_external_id: external_id, target_quota: quota, target_ttl: ttl, target_description: description })];
+                    case 0: return [4 /*yield*/, this.supabase.rpc('create_token', {
+                            target_external_id: external_id,
+                            target_quota: quota,
+                            target_ttl: ttl,
+                            target_description: description,
+                        })];
                     case 1:
                         _a = _b.sent(), data = _a.data, error = _a.error;
                         if (error) {
@@ -133,35 +145,83 @@ var SelasClient = /** @class */ (function () {
                         }
                         else {
                             token = data;
-                            return [2 /*return*/, { data: { token: token }, message: "Token created for customer ".concat(external_id, " with quota ").concat(quota, " and scope customer.") }];
+                            return [2 /*return*/, {
+                                    data: { token: token },
+                                    message: "Token created for customer ".concat(external_id, " with quota ").concat(quota, " and scope customer."),
+                                }];
                         }
                         return [2 /*return*/];
                 }
             });
         });
     };
+    SelasClient.prototype.postJob = function (config, token_key) {
+        return __awaiter(this, void 0, void 0, function () {
+            var _a, data, error, job;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
+                    case 0: return [4 /*yield*/, this.supabase.rpc("post_job", { config: config, token_key: token_key })];
+                    case 1:
+                        _a = _b.sent(), data = _a.data, error = _a.error;
+                        console.log(data, error);
+                        job = data;
+                        if (error) {
+                            return [2 /*return*/, { error: error.message }];
+                        }
+                        else {
+                            return [2 /*return*/, { data: { job: job }, message: "Job ".concat(job.id, " posted. Cost ").concat(job.job_cost, ".") }];
+                        }
+                        return [2 /*return*/];
+                }
+            });
+        });
+    };
+    SelasClient.prototype.runStableDiffusion = function (width, height, steps, guidance_scale, token_key) {
+        return __awaiter(this, void 0, void 0, function () {
+            var config;
+            return __generator(this, function (_a) {
+                config = {
+                    diffusion: {
+                        width: width,
+                        height: height,
+                        steps: steps,
+                        sampler: 'k_lms',
+                        guidance_scale: guidance_scale,
+                        io: {
+                            image_format: 'avif',
+                            image_quality: 100,
+                            blurhash: false,
+                        },
+                    },
+                };
+                return [2 /*return*/, this.postJob(config, token_key)];
+            });
+        });
+    };
     return SelasClient;
 }());
-function createSelasClient() {
+exports.SelasClient = SelasClient;
+var createSelasClient = function () {
     var SUPABASE_URL = 'https://rmsiaqinsugszccqhnpj.supabase.co';
     var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJtc2lhcWluc3Vnc3pjY3FobnBqIiwicm9sZSI6ImFub24iLCJpYXQiOjE2NjMxNDk1OTksImV4cCI6MTk3ODcyNTU5OX0.wp5GBiK4k4xQUJk_kdkW9a_mOt8C8x08pPgeTQErb9E';
     var supabase = (0, supabase_js_1.createClient)(SUPABASE_URL, SUPABASE_KEY);
     return new SelasClient(supabase);
-}
+};
+exports.createSelasClient = createSelasClient;
 var test_function = function () { return __awaiter(void 0, void 0, void 0, function () {
-    var client, _a, data, message, error;
+    var client, _a, data, error;
     return __generator(this, function (_b) {
         switch (_b.label) {
             case 0:
-                client = createSelasClient();
+                client = (0, exports.createSelasClient)();
                 return [4 /*yield*/, client.signIn('benjamin@selas.studio', 'tromtrom')];
             case 1:
                 _b.sent();
-                return [4 /*yield*/, client.createToken("test", 1, 60, "test token")];
+                return [4 /*yield*/, client.runStableDiffusion(512, 512, 100, 7.5)];
             case 2:
-                _a = _b.sent(), data = _a.data, message = _a.message, error = _a.error;
+                _a = _b.sent(), data = _a.data, error = _a.error;
                 console.log('data', data);
-                console.log('message', message);
+                // console.log('message', message);
                 console.log('error', error);
                 return [2 /*return*/];
         }
