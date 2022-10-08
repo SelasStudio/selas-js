@@ -71,8 +71,5 @@
         "@babel/core"
       ]
     }
-  },
-  "dependencies": {
-    "nr": "^0.1.0"
   }
 }
