@@ -1,4 +1,4 @@
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
 export type Customer = {
   id?: string;
@@ -26,10 +26,18 @@ export type Token = {
   description?: string;
 };
 
+export type Result = {
+  id?: string;
+  job_id: string;
+  uri: string;
+  created_at?: string;
+  user_id: string;
+};
+
 export type Job = {
   id?: number;
   created_at?: string;
-  status?: 'pending' | 'accepted' | 'completed' | 'failed';
+  status?: "pending" | "accepted" | "completed" | "failed";
   user_id?: string;
   accepted_at?: string;
   completed_at?: string;
@@ -49,7 +57,8 @@ export type DiffusionConfig = {
   seed?: number;
   steps?: number;
   skip_steps?: number;
-  sampler?: 'plms' | 'ddim' | 'k_lms';
+  batch_size?: number;
+  sampler?: "plms" | "ddim" | "k_lms";
   guidance_scale?: number;
   width?: number;
   height?: number;
@@ -60,7 +69,7 @@ export type DiffusionConfig = {
 };
 
 export type IOConfig = {
-  image_format?: 'png' | 'jpg' | 'avif' | 'webp';
+  image_format?: "png" | "jpg" | "avif" | "webp";
   image_quality?: number;
   blurhash?: boolean;
 };
@@ -75,14 +84,14 @@ export type TextPrompt = {
 
 export type InputImage = {
   url: string;
-  resize?: 'crop' | 'center_crop' | 'scale';
+  resize?: "crop" | "center_crop" | "scale";
 };
 
 export type ImagePrompt = {
   image?: InputImage;
   weight?: number;
   cutout_n?: number;
-  perceptor?: 'vit-l' | 'vit-h' | 'vit-b' | 'vit-g';
+  perceptor?: "vit-l" | "vit-h" | "vit-b" | "vit-g";
 };
 
 export type Prompt = TextPrompt | ImagePrompt;
@@ -98,7 +107,10 @@ export class SelasClient {
   }
 
   async getCustomer(external_id: string) {
-    const { data, error } = await this.supabase.from('customers').select('*').eq('external_id', external_id);
+    const { data, error } = await this.supabase
+      .from("customers")
+      .select("*")
+      .eq("external_id", external_id);
 
     if (error) {
       return { error: `Customer ${external_id} unknown` };
@@ -108,24 +120,35 @@ export class SelasClient {
   }
 
   async createCustomer(external_id: string) {
-    const { data, error } = await this.supabase.from('customers').insert({ external_id });
+    const { data, error } = await this.supabase
+      .from("customers")
+      .insert({ external_id });
 
     if (error) {
       return { error: `Customer ${external_id} already exists` };
     } else {
-      return { data: { customer: data[0] as Customer }, message: `Customer ${external_id} created.` };
+      return {
+        data: data[0] as Customer,
+        message: `Customer ${external_id} created.`,
+      };
     }
   }
 
   async deleteCustomer(external_id: string) {
-    return this.supabase.from('customers').delete().eq('external_id', external_id);
+    return this.supabase
+      .from("customers")
+      .delete()
+      .eq("external_id", external_id);
   }
 
   async addCredits(external_id: string, credits: number) {
-    const { data, error } = await this.supabase.rpc('provide_credits_to_customer', {
-      p_external_id: external_id,
-      p_nb_credits: credits,
-    });
+    const { data, error } = await this.supabase.rpc(
+      "provide_credits_to_customer",
+      {
+        p_external_id: external_id,
+        p_nb_credits: credits,
+      }
+    );
 
     if (error) {
       return { error: error.message };
@@ -137,8 +160,13 @@ export class SelasClient {
     }
   }
 
-  async createToken(external_id: string, quota: number = 1, ttl: number = 60, description: string = '') {
-    const { data, error } = await this.supabase.rpc('create_token', {
+  async createToken(
+    external_id: string,
+    quota: number = 1,
+    ttl: number = 60,
+    description: string = ""
+  ) {
+    const { data, error } = await this.supabase.rpc("create_token", {
       target_external_id: external_id,
       target_quota: quota,
       target_ttl: ttl,
@@ -152,36 +180,65 @@ export class SelasClient {
       const token = data as Token;
 
       return {
-        data: { token },
+        data: token,
         message: `Token created for customer ${external_id} with quota ${quota} and scope customer.`,
       };
     }
   }
 
   async postJob(config: Config, token_key?: string) {
-    const { data, error } = await this.supabase.rpc("post_job", {config, token_key});
+    const { data, error } = await this.supabase.rpc("post_job", {
+      config,
+      token_key,
+    });
 
     // @ts-ignore
     const job = data as Job;
 
+    if (error) {
+      return { error: error.message };
+    } else {
+      return {
+        data: job,
+        message: `Job ${job.id} posted. Cost ${job.job_cost}.`,
+      };
+    }
+  }
+
+  async getResults(job_id: number) {
+    const { data, error } = await this.supabase
+      .from("results")
+      .select("*")
+      .eq("job_id", job_id);
+
+    // @ts-ignore
+    const results = data as Result[];
 
     if (error) {
       return { error: error.message };
     } else {
-      return { data: { job }, message: `Job ${job.id} posted. Cost ${job.job_cost}.` };
+      return { data: results, message: `Results found.` };
     }
   }
 
-  async runStableDiffusion(width: number, height: number, steps: number, guidance_scale: 7.5, token_key?: string) {
+  async runStableDiffusion(
+    prompt: string,
+    width: number,
+    height: number,
+    steps: number,
+    guidance_scale: 7.5,
+    token_key?: string
+  ) {
     const config: Config = {
       diffusion: {
+        prompts: [{ text: prompt }],
         width,
         height,
         steps,
-        sampler: 'k_lms',
+        sampler: "k_lms",
         guidance_scale: guidance_scale,
         io: {
-          image_format: 'avif',
+          image_format: "avif",
           image_quality: 100,
           blurhash: false,
         },
@@ -193,25 +250,10 @@ export class SelasClient {
 }
 
 export const createSelasClient = () => {
-  const SUPABASE_URL = 'https://rmsiaqinsugszccqhnpj.supabase.co';
+  const SUPABASE_URL = "https://rmsiaqinsugszccqhnpj.supabase.co";
   const SUPABASE_KEY =
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJtc2lhcWluc3Vnc3pjY3FobnBqIiwicm9sZSI6ImFub24iLCJpYXQiOjE2NjMxNDk1OTksImV4cCI6MTk3ODcyNTU5OX0.wp5GBiK4k4xQUJk_kdkW9a_mOt8C8x08pPgeTQErb9E';
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJtc2lhcWluc3Vnc3pjY3FobnBqIiwicm9sZSI6ImFub24iLCJpYXQiOjE2NjMxNDk1OTksImV4cCI6MTk3ODcyNTU5OX0.wp5GBiK4k4xQUJk_kdkW9a_mOt8C8x08pPgeTQErb9E";
 
   const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
   return new SelasClient(supabase);
-}
-
-const test_function = async () => {
-  const client = createSelasClient();
-  await client.signIn('benjamin@selas.studio', 'tromtrom');
-
-
-  // const { data, error } = await client.supabase.rpc("compute_cost_from_config", {config: {diffusio: {}}});
-  const { data, error } = await client.runStableDiffusion(512, 512, 100, 7.5);
-
-  console.log('data', data);
-  // console.log('message', message);
-  console.log('error', error);
 };
-
-test_function();
