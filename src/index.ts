@@ -58,7 +58,7 @@ export type DiffusionConfig = {
   steps?: number;
   skip_steps?: number;
   batch_size?: number;
-  sampler?: "plms" | "ddim" | "k_lms";
+  sampler?: "plms" | "ddim" | "k_lms" | "k_euler" | "k_euler_a";
   guidance_scale?: number;
   width?: number;
   height?: number;
