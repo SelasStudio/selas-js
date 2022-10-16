@@ -127,8 +127,11 @@ export class SelasClient {
     if (error) {
       return { error: `Customer ${external_id} already exists` };
     } else {
+      // @ts-ignore
+      const customer = data as Customer;
+
       return {
-        data: data[0] as Customer,
+        data: customer,
         message: `Customer ${external_id} created.`,
       };
     }
