@@ -103,7 +103,7 @@ export class SelasClient {
   }
 
   async signIn(email: string, password: string) {
-    await this.supabase.auth.signIn({ email, password });
+    await this.supabase.auth.signInWithPassword({ email, password });
   }
 
   async getCustomer(external_id: string) {
