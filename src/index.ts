@@ -58,6 +58,7 @@ export type DiffusionConfig = {
   steps?: number;
   skip_steps?: number;
   batch_size?: number;
+  nsfw_filter?: boolean;
   sampler?: "plms" | "ddim" | "k_lms" | "k_euler" | "k_euler_a";
   guidance_scale?: number;
   width?: number;
@@ -220,7 +221,7 @@ export class SelasClient {
       return { data: results, message: `Results found.` };
     }
   }
-
+  // TODO: add the rest of the config options
   async runStableDiffusion(
     prompt: string,
     width: number,
