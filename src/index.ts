@@ -112,8 +112,8 @@ export class SelasClient {
       .select("*")
       .eq("external_id", external_id);
 
-    if (error) {
-      return { error: `Customer ${external_id} unknown` };
+    if (!data || error) {
+      return { error: error.message, hint: `Customer ${external_id} unknown` };
     } else {
       return { data: data[0] as Customer };
     }
@@ -125,7 +125,7 @@ export class SelasClient {
       .insert({ external_id });
 
     if (error) {
-      return { error: `Customer ${external_id} already exists` };
+      return { error: error.message, hint: `Customer ${external_id} already exists` };
     } else {
       // @ts-ignore
       const customer = data as Customer;
