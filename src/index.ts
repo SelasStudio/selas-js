@@ -1,4 +1,4 @@
-import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import { createClient, SupabaseClient } from "https://deno.land/x/supabase/mod.ts";
 
 export type Customer = {
   id?: string;
