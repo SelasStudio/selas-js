@@ -5,12 +5,12 @@ class SelasClient {
     this.supabase = supabase;
   }
   async signIn(email, password) {
-    await this.supabase.auth.signInWithPassword({ email, password });
+    return await this.supabase.auth.signInWithPassword({ email, password });
   }
   async getCustomer(external_id) {
     const { data, error } = await this.supabase.from("customers").select("*").eq("external_id", external_id);
-    if (error) {
-      return { error: `Customer ${external_id} unknown` };
+    if (!data || error) {
+      return { error: error.message, hint: `Customer ${external_id} unknown` };
     } else {
       return { data: data[0] };
     }
@@ -18,7 +18,7 @@ class SelasClient {
   async createCustomer(external_id) {
     const { data, error } = await this.supabase.from("customers").insert({ external_id });
     if (error) {
-      return { error: `Customer ${external_id} already exists` };
+      return { error: error.message, hint: `Customer ${external_id} already exists` };
     } else {
       const customer = data;
       return {
@@ -31,13 +31,10 @@ class SelasClient {
     return this.supabase.from("customers").delete().eq("external_id", external_id);
   }
   async addCredits(external_id, credits) {
-    const { data, error } = await this.supabase.rpc(
-      "provide_credits_to_customer",
-      {
-        p_external_id: external_id,
-        p_nb_credits: credits
-      }
-    );
+    const { data, error } = await this.supabase.rpc("provide_credits_to_customer", {
+      p_external_id: external_id,
+      p_nb_credits: credits
+    });
     if (error) {
       return { error: error.message };
     } else {
@@ -88,17 +85,28 @@ class SelasClient {
       return { data: results, message: `Results found.` };
     }
   }
-  async runStableDiffusion(prompt, width, height, steps, guidance_scale, token_key) {
+  async subscribeToJob(job_id, callback) {
+    this.supabase.channel(`public:jobs:id=eq.${job_id}`).on("postgres_changes", { event: "INSERT", schema: "public", table: "jobs", filter: `id=eq.${job_id}` }, callback).subscribe();
+  }
+  async subscribeToResults(job_id, callback) {
+    this.supabase.channel(`public:results:job_id=eq.${job_id}`).on(
+      "postgres_changes",
+      { event: "INSERT", schema: "public", table: "results", filter: `job_id=eq.${job_id}` },
+      callback
+    ).subscribe();
+  }
+  async runStableDiffusion(prompt, width, height, steps, guidance_scale, sampler, batch_size, image_format, token_key) {
     const config = {
       diffusion: {
         prompts: [{ text: prompt }],
         width,
         height,
         steps,
-        sampler: "k_lms",
+        sampler,
         guidance_scale,
+        batch_size,
         io: {
-          image_format: "avif",
+          image_format,
           image_quality: 100,
           blurhash: false
         }

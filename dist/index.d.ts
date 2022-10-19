@@ -1,5 +1,5 @@
 import * as _supabase_supabase_js from '@supabase/supabase-js';
-import { SupabaseClient } from '@supabase/supabase-js';
+import { SupabaseClient, RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 
 declare type Customer = {
     id?: string;
@@ -88,22 +88,26 @@ declare type Prompt = TextPrompt | ImagePrompt;
 declare class SelasClient {
     supabase: SupabaseClient;
     constructor(supabase: SupabaseClient);
-    signIn(email: string, password: string): Promise<void>;
+    signIn(email: string, password: string): Promise<_supabase_supabase_js.AuthResponse>;
     getCustomer(external_id: string): Promise<{
         error: string;
+        hint: string;
         data?: undefined;
     } | {
         data: Customer;
         error?: undefined;
+        hint?: undefined;
     }>;
     createCustomer(external_id: string): Promise<{
         error: string;
+        hint: string;
         data?: undefined;
         message?: undefined;
     } | {
         data: Customer;
         message: string;
         error?: undefined;
+        hint?: undefined;
     }>;
     deleteCustomer(external_id: string): Promise<_supabase_supabase_js.PostgrestResponse<undefined>>;
     addCredits(external_id: string, credits: number): Promise<{
@@ -144,7 +148,9 @@ declare class SelasClient {
         message: string;
         error?: undefined;
     }>;
-    runStableDiffusion(prompt: string, width: number, height: number, steps: number, guidance_scale: 7.5, token_key?: string): Promise<{
+    subscribeToJob(job_id: number, callback: (payload: RealtimePostgresChangesPayload<Job>) => void): Promise<void>;
+    subscribeToResults(job_id: number, callback: (payload: RealtimePostgresChangesPayload<Result>) => void): Promise<void>;
+    runStableDiffusion(prompt: string, width?: 512 | 768, height?: 512 | 768, steps?: 50, guidance_scale?: 7.5, sampler?: "plms" | "ddim" | "k_lms" | "k_euler" | "k_euler_a", batch_size?: 1 | 2 | 3 | 4, image_format?: "avif" | "jpg" | "png" | "webp", token_key?: string): Promise<{
         error: string;
         data?: undefined;
         message?: undefined;

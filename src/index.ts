@@ -1,4 +1,4 @@
-import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.0.0-rc.12";
+import { createClient, RealtimePostgresChangesPayload, SupabaseClient } from "@supabase/supabase-js";
 
 export type Customer = {
   id?: string;
@@ -107,10 +107,7 @@ export class SelasClient {
   }
 
   async getCustomer(external_id: string) {
-    const { data, error } = await this.supabase
-      .from("customers")
-      .select("*")
-      .eq("external_id", external_id);
+    const { data, error } = await this.supabase.from("customers").select("*").eq("external_id", external_id);
 
     if (!data || error) {
       return { error: error.message, hint: `Customer ${external_id} unknown` };
@@ -120,9 +117,7 @@ export class SelasClient {
   }
 
   async createCustomer(external_id: string) {
-    const { data, error } = await this.supabase
-      .from("customers")
-      .insert({ external_id });
+    const { data, error } = await this.supabase.from("customers").insert({ external_id });
 
     if (error) {
       return { error: error.message, hint: `Customer ${external_id} already exists` };
@@ -138,20 +133,14 @@ export class SelasClient {
   }
 
   async deleteCustomer(external_id: string) {
-    return this.supabase
-      .from("customers")
-      .delete()
-      .eq("external_id", external_id);
+    return this.supabase.from("customers").delete().eq("external_id", external_id);
   }
 
   async addCredits(external_id: string, credits: number) {
-    const { data, error } = await this.supabase.rpc(
-      "provide_credits_to_customer",
-      {
-        p_external_id: external_id,
-        p_nb_credits: credits,
-      }
-    );
+    const { data, error } = await this.supabase.rpc("provide_credits_to_customer", {
+      p_external_id: external_id,
+      p_nb_credits: credits,
+    });
 
     if (error) {
       return { error: error.message };
@@ -163,12 +152,7 @@ export class SelasClient {
     }
   }
 
-  async createToken(
-    external_id: string,
-    quota: number = 1,
-    ttl: number = 60,
-    description: string = ""
-  ) {
+  async createToken(external_id: string, quota: number = 1, ttl: number = 60, description: string = "") {
     const { data, error } = await this.supabase.rpc("create_token", {
       target_external_id: external_id,
       target_quota: quota,
@@ -209,10 +193,7 @@ export class SelasClient {
   }
 
   async getResults(job_id: number) {
-    const { data, error } = await this.supabase
-      .from("results")
-      .select("*")
-      .eq("job_id", job_id);
+    const { data, error } = await this.supabase.from("results").select("*").eq("job_id", job_id);
 
     // @ts-ignore
     const results = data as Result[];
@@ -224,12 +205,33 @@ export class SelasClient {
     }
   }
 
+  async subscribeToJob(job_id: number, callback: (payload: RealtimePostgresChangesPayload<Job>) => void) {
+    this.supabase
+      .channel(`public:jobs:id=eq.${job_id}`)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "jobs", filter: `id=eq.${job_id}` }, callback)
+      .subscribe();
+  }
+
+  async subscribeToResults(job_id: number, callback: (payload: RealtimePostgresChangesPayload<Result>) => void) {
+    this.supabase
+      .channel(`public:results:job_id=eq.${job_id}`)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "results", filter: `job_id=eq.${job_id}` },
+        callback
+      )
+      .subscribe();
+  }
+
   async runStableDiffusion(
     prompt: string,
-    width: number,
-    height: number,
-    steps: number,
-    guidance_scale: 7.5,
+    width?: 512 | 768,
+    height?: 512 | 768,
+    steps?: 50,
+    guidance_scale?: 7.5,
+    sampler?: "plms" | "ddim" | "k_lms" | "k_euler" | "k_euler_a",
+    batch_size?: 1 | 2 | 3 | 4,
+    image_format?: "avif" | "jpg" | "png" | "webp",
     token_key?: string
   ) {
     const config: Config = {
@@ -238,10 +240,11 @@ export class SelasClient {
         width,
         height,
         steps,
-        sampler: "k_lms",
-        guidance_scale: guidance_scale,
+        sampler,
+        guidance_scale,
+        batch_size,
         io: {
-          image_format: "avif",
+          image_format,
           image_quality: 100,
           blurhash: false,
         },
