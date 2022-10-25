@@ -34,6 +34,14 @@ export type Result = {
   user_id: string;
 };
 
+export type BlipResult = {
+  id?: string;
+  job_id: string;
+  caption: string;
+  created_at?: string;
+  user_id: string;
+};
+
 export type Job = {
   id?: number;
   created_at?: string;
@@ -50,6 +58,8 @@ export type Job = {
 
 export type Config = {
   diffusion?: DiffusionConfig;
+  blip?: BlipConfig;
+  clip_interrogate?: ClipInterrogateConfig;
 };
 
 export type DiffusionConfig = {
@@ -67,6 +77,14 @@ export type DiffusionConfig = {
   init_image?: InputImage;
   mask?: InputImage | Prompt;
   external_guidance?: any;
+};
+
+export type BlipConfig = {
+  image?: InputImage;
+};
+
+export type ClipInterrogateConfig = {
+  image?: InputImage;
 };
 
 export type IOConfig = {
@@ -204,6 +222,30 @@ export class SelasClient {
         message: `Job ${job.id} posted. Cost ${job.job_cost}.`,
       };
     }
+  }
+
+  async getBlipResult(job_id: number) {
+    const { data, error } = await this.supabase
+      .from("blip_results")
+      .select("*")
+      .eq("job_id", job_id);
+
+    const results = data as BlipResult[];
+    if (error) {
+      return { error: error.message };
+    } else {
+      return { data: results, message: `Results found.` };
+    }
+  }
+
+  async runBlipCaption(url: string, token_key?: string) {
+    const image: InputImage = { url: url };
+    const config: Config = {
+      blip: {
+      image: image
+      }
+    };
+    return this.postJob(config, token_key);
   }
 
   async getResults(job_id: number) {
