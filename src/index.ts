@@ -42,6 +42,29 @@ export type BlipResult = {
   user_id: string;
 };
 
+export type TextRank = {
+  text: string;
+  confidence: number;
+};
+
+export type ClipInterrogation = {
+  medium: TextRank[];
+  artist: TextRank[];
+  trending: TextRank[];
+  movement: TextRank[];
+  flavors: TextRank[];
+  techniques: TextRank[];
+  tags: TextRank[];
+};
+
+export type ClipInterrogateResult = {
+  id?: string;
+  job_id: string;
+  interrogation: ClipInterrogation;
+  created_at?: string;
+  user_id: string;
+};
+
 export type Job = {
   id?: number;
   created_at?: string;
@@ -222,6 +245,31 @@ export class SelasClient {
         message: `Job ${job.id} posted. Cost ${job.job_cost}.`,
       };
     }
+  }
+
+
+  async getClipInterrogateResult(job_id: number) {
+    const { data, error } = await this.supabase
+      .from("clip_interrogate_results")
+      .select("*")
+      .eq("job_id", job_id);
+
+    const results = data as ClipInterrogateResult[];
+    if (error) {
+      return { error: error.message };
+    } else {
+      return { data: results, message: `Results found.` };
+    }
+  }
+
+  async runClipInterrogate(url: string, token_key?: string) {
+    const image: InputImage = { url: url };
+    const config: Config = {
+      clip_interrogate: {
+      image: image
+      }
+    };
+    return this.postJob(config, token_key);
   }
 
   async getBlipResult(job_id: number) {
