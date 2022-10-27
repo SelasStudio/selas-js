@@ -223,6 +223,7 @@ export class SelasClient {
       .subscribe();
   }
 
+
   async runStableDiffusion(
     prompt: string,
     width?: 512 | 768,
@@ -260,6 +261,6 @@ export const createSelasClient = () => {
   const SUPABASE_KEY =
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJtc2lhcWluc3Vnc3pjY3FobnBqIiwicm9sZSI6ImFub24iLCJpYXQiOjE2NjMxNDk1OTksImV4cCI6MTk3ODcyNTU5OX0.wp5GBiK4k4xQUJk_kdkW9a_mOt8C8x08pPgeTQErb9E";
 
-  const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+  const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {auth: {persistSession: false}});
   return new SelasClient(supabase);
 };
