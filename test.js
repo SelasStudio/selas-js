@@ -1,7 +1,7 @@
 const selas_js = require("./dist/index.cjs");
 
 const email = "your mail"
-const password = "tyour password";
+const password = "your password"
 
 const test = async () => {
   const selas = selas_js.createSelasClient();
@@ -17,11 +17,15 @@ const test = async () => {
       1,
       "avif"
     );
-  console.log("job:", job)
-
-  await selas.subscribeToResults(job.id, (data) => {
-    console.log("data", data);
-  })
+  
+  if (job) {
+    await selas.subscribeToResults(job.id, (data) => {
+      console.log("data", data);
+    })
+  }
+  else {
+    console.log("error", error);
+  }
 }
 
 test();
