@@ -1,4 +1,4 @@
-import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import { createClient, RealtimePostgresChangesPayload, SupabaseClient } from "@supabase/supabase-js";
 
 export type Customer = {
   id?: string;
@@ -101,7 +101,7 @@ export type DiffusionConfig = {
   skip_steps?: number;
   batch_size?: number;
   nsfw_filter?: boolean;
-  sampler?: "plms" | "ddim" | "k_lms" | "k_euler" | "k_euler_a";
+  sampler?: "plms" | "ddim" | "k_lms" | "k_euler" | "k_euler_a" | "k_euler" | "k_euler_a";
   guidance_scale?: number;
   width?: number;
   height?: number;
@@ -191,52 +191,44 @@ export class SelasClient {
   }
 
   async signIn(email: string, password: string) {
-    await this.supabase.auth.signIn({ email, password });
+    return await this.supabase.auth.signInWithPassword({ email, password });
   }
 
   async getCustomer(external_id: string) {
-    const { data, error } = await this.supabase
-      .from("customers")
-      .select("*")
-      .eq("external_id", external_id);
+    const { data, error } = await this.supabase.from("customers").select("*").eq("external_id", external_id);
 
-    if (error) {
-      return { error: `Customer ${external_id} unknown` };
+    if (!data || error) {
+      return { error: error.message, hint: `Customer ${external_id} unknown` };
     } else {
       return { data: data[0] as Customer };
     }
   }
 
   async createCustomer(external_id: string) {
-    const { data, error } = await this.supabase
-      .from("customers")
-      .insert({ external_id });
+    const { data, error } = await this.supabase.from("customers").insert({ external_id });
 
     if (error) {
-      return { error: `Customer ${external_id} already exists` };
+      return { error: error.message, hint: `Customer ${external_id} already exists` };
     } else {
+      // @ts-ignore
+      const customer = data as Customer;
+
       return {
-        data: data[0] as Customer,
+        data: customer,
         message: `Customer ${external_id} created.`,
       };
     }
   }
 
   async deleteCustomer(external_id: string) {
-    return this.supabase
-      .from("customers")
-      .delete()
-      .eq("external_id", external_id);
+    return this.supabase.from("customers").delete().eq("external_id", external_id);
   }
 
   async addCredits(external_id: string, credits: number) {
-    const { data, error } = await this.supabase.rpc(
-      "provide_credits_to_customer",
-      {
-        p_external_id: external_id,
-        p_nb_credits: credits,
-      }
-    );
+    const { data, error } = await this.supabase.rpc("provide_credits_to_customer", {
+      p_external_id: external_id,
+      p_nb_credits: credits,
+    });
 
     if (error) {
       return { error: error.message };
@@ -248,12 +240,7 @@ export class SelasClient {
     }
   }
 
-  async createToken(
-    external_id: string,
-    quota: number = 1,
-    ttl: number = 60,
-    description: string = ""
-  ) {
+  async createToken(external_id: string, quota: number = 1, ttl: number = 60, description: string = "") {
     const { data, error } = await this.supabase.rpc("create_token", {
       target_external_id: external_id,
       target_quota: quota,
@@ -413,10 +400,7 @@ export class SelasClient {
   }
 
   async getResults(job_id: number) {
-    const { data, error } = await this.supabase
-      .from("results")
-      .select("*")
-      .eq("job_id", job_id);
+    const { data, error } = await this.supabase.from("results").select("*").eq("job_id", job_id);
 
     // @ts-ignore
     const results = data as Result[];
@@ -428,12 +412,34 @@ export class SelasClient {
     }
   }
   // TODO: add the rest of the config options
+  async subscribeToJob(job_id: number, callback: (payload: RealtimePostgresChangesPayload<Job>) => void) {
+    this.supabase
+      .channel(`public:jobs:id=eq.${job_id}`)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "jobs", filter: `id=eq.${job_id}` }, callback)
+      .subscribe();
+  }
+
+  async subscribeToResults(job_id: number, callback: (payload: RealtimePostgresChangesPayload<Result>) => void) {
+    this.supabase
+      .channel(`public:results:job_id=eq.${job_id}`)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "results", filter: `job_id=eq.${job_id}` },
+        callback
+      )
+      .subscribe();
+  }
+
+
   async runStableDiffusion(
     prompt: string,
-    width: number,
-    height: number,
-    steps: number,
-    guidance_scale: 7.5,
+    width?: 512 | 768,
+    height?: 512 | 768,
+    steps?: 50,
+    guidance_scale?: 7.5,
+    sampler?: "plms" | "ddim" | "k_lms" | "k_euler" | "k_euler_a",
+    batch_size?: 1 | 2 | 3 | 4,
+    image_format?: "avif" | "jpg" | "png" | "webp",
     token_key?: string
   ) {
     const config: Config = {
@@ -442,10 +448,11 @@ export class SelasClient {
         width,
         height,
         steps,
-        sampler: "k_lms",
-        guidance_scale: guidance_scale,
+        sampler,
+        guidance_scale,
+        batch_size,
         io: {
-          image_format: "avif",
+          image_format,
           image_quality: 100,
           blurhash: false,
         },
@@ -461,6 +468,6 @@ export const createSelasClient = () => {
   const SUPABASE_KEY =
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJtc2lhcWluc3Vnc3pjY3FobnBqIiwicm9sZSI6ImFub24iLCJpYXQiOjE2NjMxNDk1OTksImV4cCI6MTk3ODcyNTU5OX0.wp5GBiK4k4xQUJk_kdkW9a_mOt8C8x08pPgeTQErb9E";
 
-  const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+  const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {auth: {persistSession: false}});
   return new SelasClient(supabase);
 };

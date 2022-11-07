@@ -1,0 +1,1 @@
+module.exports = require("/home/trom/selas-js/node_modules/.pnpm/jiti@1.16.0/node_modules/jiti/lib/index.js")(null, { interopDefault: true, esmResolve: true })("/home/trom/selas-js/src/index.ts")
