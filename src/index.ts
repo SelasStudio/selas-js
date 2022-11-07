@@ -430,7 +430,6 @@ export class SelasClient {
       .subscribe();
   }
 
-
   async runStableDiffusion(
     prompt: string,
     width?: 512 | 768,
@@ -463,11 +462,39 @@ export class SelasClient {
   }
 }
 
-export const createSelasClient = () => {
+export const createBackendSelasClient = () => {
   const SUPABASE_URL = "https://rmsiaqinsugszccqhnpj.supabase.co";
   const SUPABASE_KEY =
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJtc2lhcWluc3Vnc3pjY3FobnBqIiwicm9sZSI6ImFub24iLCJpYXQiOjE2NjMxNDk1OTksImV4cCI6MTk3ODcyNTU5OX0.wp5GBiK4k4xQUJk_kdkW9a_mOt8C8x08pPgeTQErb9E";
 
-  const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {auth: {persistSession: false}});
+  const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: false } });
+  return new SelasClient(supabase);
+};
+
+export const createSelasClient = (token_key?: string) => {
+  const SUPABASE_URL = "https://rmsiaqinsugszccqhnpj.supabase.co";
+  const SUPABASE_KEY =
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJtc2lhcWluc3Vnc3pjY3FobnBqIiwicm9sZSI6ImFub24iLCJpYXQiOjE2NjMxNDk1OTksImV4cCI6MTk3ODcyNTU5OX0.wp5GBiK4k4xQUJk_kdkW9a_mOt8C8x08pPgeTQErb9E";
+
+  let options = {};
+
+  if (token_key) {
+    const jwt =
+      "eyJhbGciOiJIUzI1NiJ9.eyJleHAiOjE5Nzg3MjU1OTksImlhdCI6MTY2MzE0OTU5OSwiaXNzIjoic3VwYWJhc2UiLCJyZWYiOiJybXNpYXFpbnN1Z3N6Y2NxaG5waiIsInJvbGUiOiJhbm9uIn0.wVaFy7iKbOeBtvYVZkLcJrytddUCBm_MtkB6oNTir2k";
+
+    options = {
+      global: {
+        headers: {
+          Authorization: `Bearer ${jwt}`,
+        },
+      },
+    };
+  }
+  // const payload = { exp: 1978725599, iat: 1663149599, iss: "supabase", ref: "rmsiaqinsugszccqhnpj", role: "anon" }
+
+  // const jwt_token = await new SignJWT(payload).setProtectedHeader({ alg: "HS256" }).sign(new TextEncoder().encode(SUPABASE_KEY));
+
+  const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, options);
+
   return new SelasClient(supabase);
 };

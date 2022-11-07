@@ -1,10 +1,12 @@
 const selas_js = require("./dist/index.cjs");
 
-const email = "your mail"
-const password = "your password"
+const email = "benjamin@selas.studio"
+const password = "tromtrom"
+
+console.log(password)
 
 const test = async () => {
-  const selas = selas_js.createSelasClient();
+  const selas = selas_js.createBackendSelasClient();
   const { data: session } = await selas.signIn(email, password);
 
   const {data:job, error} = await selas.runStableDiffusion(
