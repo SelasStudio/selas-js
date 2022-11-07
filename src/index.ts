@@ -34,6 +34,45 @@ export type Result = {
   user_id: string;
 };
 
+export type BlipResult = {
+  id?: string;
+  job_id: string;
+  caption: string;
+  created_at?: string;
+  user_id: string;
+};
+
+export type TextRank = {
+  text: string;
+  confidence: number;
+};
+
+export type ClipInterrogation = {
+  medium: TextRank[];
+  artist: TextRank[];
+  trending: TextRank[];
+  movement: TextRank[];
+  flavors: TextRank[];
+  techniques: TextRank[];
+  tags: TextRank[];
+};
+
+export type ClipInterrogateResult = {
+  id?: string;
+  job_id: string;
+  interrogation: ClipInterrogation;
+  created_at?: string;
+  user_id: string;
+};
+
+export type DreamboothResult = {
+  id?: string;
+  job_id: string;
+  user_id: string;
+  diffusion_model_id: string;
+  created_at?: string;
+};
+
 export type Job = {
   id?: number;
   created_at?: string;
@@ -50,6 +89,9 @@ export type Job = {
 
 export type Config = {
   diffusion?: DiffusionConfig;
+  blip?: BlipConfig;
+  clip_interrogate?: ClipInterrogateConfig;
+  dreambooth?: DreamboothConfig;
 };
 
 export type DiffusionConfig = {
@@ -58,7 +100,8 @@ export type DiffusionConfig = {
   steps?: number;
   skip_steps?: number;
   batch_size?: number;
-  sampler?: "plms" | "ddim" | "k_lms" | "k_euler" | "k_euler_a";
+  nsfw_filter?: boolean;
+  sampler?: "plms" | "ddim" | "k_lms" | "k_euler" | "k_euler_a" | "k_euler" | "k_euler_a";
   guidance_scale?: number;
   width?: number;
   height?: number;
@@ -66,6 +109,51 @@ export type DiffusionConfig = {
   init_image?: InputImage;
   mask?: InputImage | Prompt;
   external_guidance?: any;
+  diffusion_model?: string;
+};
+
+export type DreamboothConfig = {
+  instance_prompt: string;
+  instance_images: InputImage[];
+  model_name: string;
+  model_description?: string;
+  class_prompt?: string;
+  class_images?: InputImage[];
+  pretrained_model_name_or_path?: string;
+  num_class_images?: number;
+  max_train_steps?: number;
+  num_train_epochs?: number;
+  resolution?: number;
+  learning_rate?: number;
+  lr_scheduler?: string;
+  lr_warmup_steps?: number;
+  scale_lr?: boolean;
+  gradient_accumulation_steps?: number;
+  gradient_checkpointing?: boolean;
+  train_text_encoder?: boolean;
+  with_prior_preservation?: boolean;
+  prior_loss_weight?: number;
+  sample_batch_size?: number;
+  train_batch_size?: number;
+  mixed_precision?: string;
+  use_8bit_adam?: boolean;
+  adam_beta1?: number;
+  adam_beta2?: number;
+  adam_weight_decay?: number;
+  adam_epsilon?: number;
+  seed?: number;
+  center_crop?: boolean;
+  max_grad_norm?: number;
+  revision?: string;
+  tokenizer_name?: string;
+};
+
+export type BlipConfig = {
+  image?: InputImage;
+};
+
+export type ClipInterrogateConfig = {
+  image?: InputImage;
 };
 
 export type IOConfig = {
@@ -192,6 +280,125 @@ export class SelasClient {
     }
   }
 
+  async getDreamboothResult(job_id: number) {
+    const { data, error } = await this.supabase
+      .from("dreambooth_results")
+      .select("*")
+      .eq("job_id", job_id);
+
+    const results = data as DreamboothResult[];
+    if (error) {
+      return { error: error.message };
+    } else {
+      return { data: results, message: `Results found.` };
+    }
+  }
+
+  async runDreambooth(instance_prompt: string, instance_images: string[],
+    model_name: string, model_description?: string,
+    class_prompt?: string, class_images?: string[],
+    num_class_images?: number, max_train_steps?: number, num_train_epochs?: number,
+    learning_rate?: number,
+    train_text_encoder?: boolean,
+    with_prior_preservation?: boolean,
+    token_key?: string) {
+    let config: Config = {
+      dreambooth: {
+        instance_prompt: instance_prompt,
+        instance_images: instance_images.map((url) => ({ url })),
+        model_name: model_name,
+      },
+    };
+    
+    // if optional parameters are provided, add them to the config
+    if (model_description) {
+      // @ts-ignore
+      config.dreambooth.model_description = model_description;
+    }
+    if (class_prompt) {
+      // @ts-ignore
+      config.dreambooth.class_prompt = class_prompt;
+    }
+    if (class_images) {
+      // @ts-ignore
+      config.dreambooth.class_images = class_images.map((url) => ({ url }));
+    }
+    if (num_class_images) {
+      // @ts-ignore
+      config.dreambooth.num_class_images = num_class_images;
+    }
+    if (max_train_steps) {
+      // @ts-ignore
+      config.dreambooth.max_train_steps = max_train_steps;
+    }
+    if (num_train_epochs) {
+      // @ts-ignore
+      config.dreambooth.num_train_epochs = num_train_epochs;
+    }
+    if (learning_rate) {
+      // @ts-ignore
+      config.dreambooth.learning_rate = learning_rate;
+    }
+    if (train_text_encoder) {
+      // @ts-ignore
+      config.dreambooth.train_text_encoder = train_text_encoder;
+    }
+    if (with_prior_preservation) {
+      // @ts-ignore
+      config.dreambooth.with_prior_preservation = with_prior_preservation;
+    }
+
+    return this.postJob(config, token_key);
+  }
+
+  async getClipInterrogateResult(job_id: number) {
+    const { data, error } = await this.supabase
+      .from("clip_interrogate_results")
+      .select("*")
+      .eq("job_id", job_id);
+
+    const results = data as ClipInterrogateResult[];
+    if (error) {
+      return { error: error.message };
+    } else {
+      return { data: results, message: `Results found.` };
+    }
+  }
+
+  async runClipInterrogate(url: string, token_key?: string) {
+    const image: InputImage = { url: url };
+    const config: Config = {
+      clip_interrogate: {
+      image: image
+      }
+    };
+    return this.postJob(config, token_key);
+  }
+
+  async getBlipResult(job_id: number) {
+    const { data, error } = await this.supabase
+      .from("blip_results")
+      .select("*")
+      .eq("job_id", job_id);
+
+    const results = data as BlipResult[];
+    if (error) {
+      return { error: error.message };
+    } else {
+      return { data: results, message: `Results found.` };
+    }
+  }
+
+  async runBlipCaption(url: string, token_key?: string) {
+    const image: InputImage = { url: url };
+    const config: Config = {
+      blip: {
+      image: image
+      }
+    };
+    return this.postJob(config, token_key);
+  }
+
   async getResults(job_id: number) {
     const { data, error } = await this.supabase.from("results").select("*").eq("job_id", job_id);
 
@@ -204,7 +411,7 @@ export class SelasClient {
       return { data: results, message: `Results found.` };
     }
   }
-
+  // TODO: add the rest of the config options
   async subscribeToJob(job_id: number, callback: (payload: RealtimePostgresChangesPayload<Job>) => void) {
     this.supabase
       .channel(`public:jobs:id=eq.${job_id}`)
