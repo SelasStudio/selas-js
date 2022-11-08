@@ -73,6 +73,11 @@ export type DreamboothResult = {
   created_at?: string;
 };
 
+export type WorkerConfig = {
+  branch: string;
+  is_dirty: boolean;
+};
+
 export type Job = {
   id?: number;
   created_at?: string;
@@ -85,6 +90,7 @@ export type Job = {
   token_key?: string;
   config: Config;
   job_cost?: number;
+  worker_config?: WorkerConfig;
 };
 
 export type Config = {
