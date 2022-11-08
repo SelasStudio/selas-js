@@ -73,6 +73,11 @@ export type DreamboothResult = {
   created_at?: string;
 };
 
+export type WorkerConfig = {
+  branch: string;
+  is_dirty: boolean;
+};
+
 export type Job = {
   id?: number;
   created_at?: string;
@@ -93,6 +98,7 @@ export type Config = {
   blip?: BlipConfig;
   clip_interrogate?: ClipInterrogateConfig;
   dreambooth?: DreamboothConfig;
+  worker?: WorkerConfig;
 };
 
 export type DiffusionConfig = {
@@ -456,6 +462,7 @@ export class SelasClient {
     batch_size: 1 | 2 | 3 | 4 = 1,
     image_format: "avif" | "jpg" | "png" | "webp" = "avif",
     diffusion_model: string="1.5",
+    worker_config?: WorkerConfig,
     token_key?: string
   ) {
     const config: Config = {
@@ -474,6 +481,7 @@ export class SelasClient {
         },
         diffusion_model
       },
+      worker: worker_config,
     };
 
     return this.postJob(config, token_key);
