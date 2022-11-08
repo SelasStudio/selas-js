@@ -3,8 +3,6 @@ const selas_js = require("./dist/index.cjs");
 const email = "benjamin@selas.studio"
 const password = "tromtrom"
 
-console.log(password)
-
 const test = async () => {
   const selas = selas_js.createBackendSelasClient();
   const { data: session } = await selas.signIn(email, password);
@@ -17,7 +15,8 @@ const test = async () => {
       7.5,
       "k_lms",
       1,
-      "avif"
+      "avif",
+      diffusion_model=""
     );
   
   if (job) {

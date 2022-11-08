@@ -73,11 +73,6 @@ export type DreamboothResult = {
   created_at?: string;
 };
 
-export type WorkerConfig = {
-  branch: string;
-  is_dirty: boolean;
-};
-
 export type Job = {
   id?: number;
   created_at?: string;
@@ -286,6 +281,7 @@ export class SelasClient {
     }
   }
 
+
   async getDreamboothResult(job_id: number) {
     const { data, error } = await this.supabase
       .from("dreambooth_results")
@@ -300,6 +296,20 @@ export class SelasClient {
     }
   }
 
+  /**
+   * Perform a function call.
+   *
+   * @param model_name  The name of the model that you will use to perform the function call.
+   * @param model_description  A description of the model that you will use to perform the function call.
+   * @param class_prompt 
+   * @param class_images
+   * @param num_class_images 
+   * @param learning_rate
+   * @param train_text_encoder
+   * @param with_prior_preservation
+   * @param token_key
+   *
+   */
   async runDreambooth(instance_prompt: string, instance_images: string[],
     model_name: string, model_description?: string,
     class_prompt?: string, class_images?: string[],
@@ -438,13 +448,14 @@ export class SelasClient {
 
   async runStableDiffusion(
     prompt: string,
-    width?: 512 | 768,
-    height?: 512 | 768,
-    steps?: 50,
-    guidance_scale?: 7.5,
-    sampler?: "plms" | "ddim" | "k_lms" | "k_euler" | "k_euler_a",
-    batch_size?: 1 | 2 | 3 | 4,
-    image_format?: "avif" | "jpg" | "png" | "webp",
+    width: 512 | 768  = 512,
+    height: 512 | 768 = 512,
+    steps: 50 = 50,
+    guidance_scale: number=7.5,
+    sampler: "plms" | "ddim" | "k_lms" | "k_euler" | "k_euler_a"="k_lms",
+    batch_size: 1 | 2 | 3 | 4 = 1,
+    image_format: "avif" | "jpg" | "png" | "webp" = "avif",
+    diffusion_model: string="1.5",
     token_key?: string
   ) {
     const config: Config = {
@@ -461,6 +472,7 @@ export class SelasClient {
           image_quality: 100,
           blurhash: false,
         },
+        diffusion_model
       },
     };
 
