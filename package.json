@@ -1,6 +1,6 @@
 {
   "name": "selas",
-  "version": "0.0.14",
+  "version": "0.0.15",
   "description": "Client for the selas API",
   "packageManager": "pnpm@7.13.2",
   "engines": {
