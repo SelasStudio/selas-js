@@ -177,7 +177,7 @@ class SelasClient {
       callback
     ).subscribe();
   }
-  async runStableDiffusion(prompt, width = 512, height = 512, steps = 50, guidance_scale = 7.5, sampler = "k_lms", batch_size = 1, image_format = "avif", diffusion_model = "1.5", worker_config, token_key) {
+  async runStableDiffusion(prompt, width = 512, height = 512, steps = 50, guidance_scale = 7.5, sampler = "k_lms", batch_size = 1, image_format = "avif", translate = false, diffusion_model = "1.5", worker_config, token_key) {
     const config = {
       diffusion: {
         prompts: [{ text: prompt }],
@@ -190,7 +190,8 @@ class SelasClient {
         io: {
           image_format,
           image_quality: 100,
-          blurhash: false
+          blurhash: false,
+          translate
         },
         diffusion_model
       },

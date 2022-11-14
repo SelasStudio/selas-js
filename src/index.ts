@@ -76,6 +76,7 @@ export type DreamboothResult = {
 export type WorkerConfig = {
   branch: string;
   is_dirty: boolean;
+  name: string;
 };
 
 export type Job = {
@@ -108,7 +109,7 @@ export type DiffusionConfig = {
   skip_steps?: number;
   batch_size?: number;
   nsfw_filter?: boolean;
-  sampler?: "plms" | "ddim" | "k_lms" | "k_euler" | "k_euler_a" | "k_euler" | "k_euler_a";
+  sampler: "plms" | "ddim" | "k_lms" | "k_euler" | "k_euler_a" | "k_euler" | "k_euler_a";
   guidance_scale?: number;
   width?: number;
   height?: number;
@@ -167,6 +168,7 @@ export type IOConfig = {
   image_format?: "png" | "jpg" | "avif" | "webp";
   image_quality?: number;
   blurhash?: boolean;
+  translate?: boolean;
 };
 
 export type TextPrompt = {
@@ -456,11 +458,12 @@ export class SelasClient {
     prompt: string,
     width: 512 | 768  = 512,
     height: 512 | 768 = 512,
-    steps: 50 = 50,
+    steps: number = 50,
     guidance_scale: number=7.5,
     sampler: "plms" | "ddim" | "k_lms" | "k_euler" | "k_euler_a"="k_lms",
     batch_size: 1 | 2 | 3 | 4 = 1,
     image_format: "avif" | "jpg" | "png" | "webp" = "avif",
+    translate: boolean = false,
     diffusion_model: string="1.5",
     worker_config?: WorkerConfig,
     token_key?: string
@@ -478,6 +481,7 @@ export class SelasClient {
           image_format,
           image_quality: 100,
           blurhash: false,
+          translate
         },
         diffusion_model
       },
@@ -486,6 +490,38 @@ export class SelasClient {
 
     return this.postJob(config, token_key);
   }
+}
+
+
+type Model = {
+  id: string;
+  type: "vae" | "unet" | "text_encoder"
+  parent_model_id: string;
+  name: string;
+  description: string;
+  version: string;
+  runtime: "pytorch" | "ait";
+  ait_config?: {
+    gpu: string;
+    batch_size: number;
+    width: number;
+    height: number;
+  }
+  data: string;
+}
+
+type LDM = {
+  id: string;
+  name: string;
+  description: string;
+  dreambooth_trigger?: string;
+  user_id?: string;
+  load_priority?: number;
+  created_at: string;
+  last_used_at: string;
+  text_encoder: Model,
+  unet: Model,
+  vae: Model,
 }
 
 export const createBackendSelasClient = () => {

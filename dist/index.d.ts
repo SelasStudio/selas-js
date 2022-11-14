@@ -97,7 +97,7 @@ declare type DiffusionConfig = {
     skip_steps?: number;
     batch_size?: number;
     nsfw_filter?: boolean;
-    sampler?: "plms" | "ddim" | "k_lms" | "k_euler" | "k_euler_a" | "k_euler" | "k_euler_a";
+    sampler: "plms" | "ddim" | "k_lms" | "k_euler" | "k_euler_a" | "k_euler" | "k_euler_a";
     guidance_scale?: number;
     width?: number;
     height?: number;
@@ -152,6 +152,7 @@ declare type IOConfig = {
     image_format?: "png" | "jpg" | "avif" | "webp";
     image_quality?: number;
     blurhash?: boolean;
+    translate?: boolean;
 };
 declare type TextPrompt = {
     text?: string;
@@ -290,7 +291,7 @@ declare class SelasClient {
     }>;
     subscribeToJob(job_id: number, callback: (payload: RealtimePostgresChangesPayload<Job>) => void): Promise<void>;
     subscribeToResults(job_id: number, callback: (payload: RealtimePostgresChangesPayload<Result>) => void): Promise<void>;
-    runStableDiffusion(prompt: string, width?: 512 | 768, height?: 512 | 768, steps?: 50, guidance_scale?: number, sampler?: "plms" | "ddim" | "k_lms" | "k_euler" | "k_euler_a", batch_size?: 1 | 2 | 3 | 4, image_format?: "avif" | "jpg" | "png" | "webp", diffusion_model?: string, worker_config?: WorkerConfig, token_key?: string): Promise<{
+    runStableDiffusion(prompt: string, width?: 512 | 768, height?: 512 | 768, steps?: 50, guidance_scale?: number, sampler?: "plms" | "ddim" | "k_lms" | "k_euler" | "k_euler_a", batch_size?: 1 | 2 | 3 | 4, image_format?: "avif" | "jpg" | "png" | "webp", translate?: boolean, diffusion_model?: string, worker_config?: WorkerConfig, token_key?: string): Promise<{
         error: string;
         data?: undefined;
         message?: undefined;
