@@ -1,6 +1,6 @@
 {
-  "name": "selas",
-  "version": "0.0.16",
+  "name": "@selas/selas-js",
+  "version": "0.1.0",
   "description": "Client for the selas API",
   "packageManager": "pnpm@7.13.2",
   "engines": {
@@ -44,14 +44,9 @@
     "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {
-    "@supabase/supabase-js": "^2.0.4"
+    "@supabase/supabase-js": "^2.1.0"
   },
   "devDependencies": {
-    "@japa/assert": "^1.3.4",
-    "@japa/core": "^7.0.0 ",
-    "@japa/runner": "^2.0.9",
-    "@japa/spec-reporter": "^1.1.12",
-    "@julr/eslint-config": "^0.3.2",
     "@types/node": "^18.7.14",
     "bumpp": "^8.2.1",
     "eslint": ">=8.18.0 <9.0.0",
@@ -72,6 +67,25 @@
     }
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.0.4"
-  }
+    "@supabase/supabase-js": "^2.1.0"
+  },
+  "directories": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SelasStudio/selas-js.git"
+  },
+  "keywords": [
+    "API",
+    "Client",
+    "for",
+    "Selas",
+    "API",
+    "(https://selas.ai)"
+  ],
+  "bugs": {
+    "url": "https://github.com/SelasStudio/selas-js/issues"
+  },
+  "homepage": "https://github.com/SelasStudio/selas-js#readme"
 }

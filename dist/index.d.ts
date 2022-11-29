@@ -1,5 +1,4 @@
-import * as _supabase_supabase_js from '@supabase/supabase-js';
-import { SupabaseClient, RealtimePostgresChangesPayload } from '@supabase/supabase-js';
+import { SupabaseClient } from '@supabase/supabase-js';
 
 declare type Customer = {
     id?: string;
@@ -13,16 +12,6 @@ declare type Billing = {
     plan?: string;
     plan_name?: string;
     credits: number;
-};
-declare type Token = {
-    id?: string;
-    key: string;
-    created_at?: string;
-    user_id: string;
-    ttl: number;
-    quota: number;
-    customer_id: string;
-    description?: string;
 };
 declare type Result = {
     id?: string;
@@ -66,8 +55,13 @@ declare type DreamboothResult = {
     created_at?: string;
 };
 declare type WorkerConfig = {
-    branch: string;
-    is_dirty: boolean;
+    branch?: string;
+    is_dirty?: boolean;
+    name?: string;
+    cluster?: string;
+    commit?: string;
+    tags?: string[];
+    services?: string[];
 };
 declare type Job = {
     id?: number;
@@ -91,7 +85,6 @@ declare type Config = {
     worker?: WorkerConfig;
 };
 declare type DiffusionConfig = {
-    io?: IOConfig;
     seed?: number;
     steps?: number;
     skip_steps?: number;
@@ -106,6 +99,9 @@ declare type DiffusionConfig = {
     mask?: InputImage | Prompt;
     external_guidance?: any;
     diffusion_model?: string;
+    image_format?: "png" | "jpg" | "avif" | "webp";
+    image_quality?: number;
+    translate?: boolean;
 };
 declare type DreamboothConfig = {
     instance_prompt: string;
@@ -148,12 +144,6 @@ declare type BlipConfig = {
 declare type ClipInterrogateConfig = {
     image?: InputImage;
 };
-declare type IOConfig = {
-    image_format?: "png" | "jpg" | "avif" | "webp";
-    image_quality?: number;
-    blurhash?: boolean;
-    translate?: boolean;
-};
 declare type TextPrompt = {
     text?: string;
     weight?: number;
@@ -174,74 +164,13 @@ declare type ImagePrompt = {
 declare type Prompt = TextPrompt | ImagePrompt;
 declare class SelasClient {
     supabase: SupabaseClient;
-    constructor(supabase: SupabaseClient);
-    signIn(email: string, password: string): Promise<_supabase_supabase_js.AuthResponse>;
-    getCustomer(external_id: string): Promise<{
-        error: string;
-        hint: string;
-        data?: undefined;
-    } | {
-        data: Customer;
-        error?: undefined;
-        hint?: undefined;
-    }>;
-    createCustomer(external_id: string): Promise<{
-        error: string;
-        hint: string;
-        data?: undefined;
-        message?: undefined;
-    } | {
-        data: Customer;
-        message: string;
-        error?: undefined;
-        hint?: undefined;
-    }>;
-    deleteCustomer(external_id: string): Promise<_supabase_supabase_js.PostgrestResponse<undefined>>;
-    addCredits(external_id: string, credits: number): Promise<{
+    token: string | undefined;
+    constructor(supabase: SupabaseClient, token: string);
+    postJob: (config: Config) => Promise<{
         error: string;
         data?: undefined;
-        message?: undefined;
-    } | {
-        data: {
-            current_balance: any[];
-        };
-        message: string;
-        error?: undefined;
-    }>;
-    createToken(external_id: string, quota?: number, ttl?: number, description?: string): Promise<{
-        error: string;
-        data?: undefined;
-        message?: undefined;
-    } | {
-        data: Token;
-        message: string;
-        error?: undefined;
-    }>;
-    postJob(config: Config, token_key?: string): Promise<{
-        error: string;
-        data?: undefined;
-        message?: undefined;
     } | {
         data: Job;
-        message: string;
-        error?: undefined;
-    }>;
-    getDreamboothResult(job_id: number): Promise<{
-        error: string;
-        data?: undefined;
-        message?: undefined;
-    } | {
-        data: DreamboothResult[];
-        message: string;
-        error?: undefined;
-    }>;
-    runDreambooth(instance_prompt: string, instance_images: string[], model_name: string, model_description?: string, class_prompt?: string, class_images?: string[], num_class_images?: number, max_train_steps?: number, num_train_epochs?: number, learning_rate?: number, train_text_encoder?: boolean, with_prior_preservation?: boolean, token_key?: string): Promise<{
-        error: string;
-        data?: undefined;
-        message?: undefined;
-    } | {
-        data: Job;
-        message: string;
         error?: undefined;
     }>;
     getClipInterrogateResult(job_id: number): Promise<{
@@ -253,13 +182,11 @@ declare class SelasClient {
         message: string;
         error?: undefined;
     }>;
-    runClipInterrogate(url: string, token_key?: string): Promise<{
+    runClipInterrogate(url: string): Promise<{
         error: string;
         data?: undefined;
-        message?: undefined;
     } | {
         data: Job;
-        message: string;
         error?: undefined;
     }>;
     getBlipResult(job_id: number): Promise<{
@@ -271,16 +198,14 @@ declare class SelasClient {
         message: string;
         error?: undefined;
     }>;
-    runBlipCaption(url: string, token_key?: string): Promise<{
+    runBlipCaption(url: string): Promise<{
         error: string;
         data?: undefined;
-        message?: undefined;
     } | {
         data: Job;
-        message: string;
         error?: undefined;
     }>;
-    getResults(job_id: number): Promise<{
+    fetchResults(job_id: number): Promise<{
         error: string;
         data?: undefined;
         message?: undefined;
@@ -289,19 +214,23 @@ declare class SelasClient {
         message: string;
         error?: undefined;
     }>;
-    subscribeToJob(job_id: number, callback: (payload: RealtimePostgresChangesPayload<Job>) => void): Promise<void>;
-    subscribeToResults(job_id: number, callback: (payload: RealtimePostgresChangesPayload<Result>) => void): Promise<void>;
-    runStableDiffusion(prompt: string, width?: 512 | 768, height?: 512 | 768, steps?: 50, guidance_scale?: number, sampler?: "plms" | "ddim" | "k_lms" | "k_euler" | "k_euler_a", batch_size?: 1 | 2 | 3 | 4, image_format?: "avif" | "jpg" | "png" | "webp", translate?: boolean, diffusion_model?: string, worker_config?: WorkerConfig, token_key?: string): Promise<{
+    awaitResults: (job: Job, timeout?: number) => Promise<unknown>;
+    generateImage({ prompt, format, n_images, quality, export_format, nsfw_filter }: generateImageParams): Promise<{
         error: string;
         data?: undefined;
-        message?: undefined;
     } | {
         data: Job;
-        message: string;
         error?: undefined;
     }>;
 }
-declare const createBackendSelasClient: () => SelasClient;
-declare const createSelasClient: (token_key?: string) => SelasClient;
+declare type generateImageParams = {
+    prompt: string;
+    format: "landscape" | "portrait" | "square";
+    n_images: 1 | 4;
+    quality: "minimal" | "normal" | "high";
+    export_format: "png" | "jpg" | "webp" | "avif";
+    nsfw_filter: boolean;
+};
+declare const createSelasClient: (token_key: string) => SelasClient;
 
-export { Billing, BlipConfig, BlipResult, ClipInterrogateConfig, ClipInterrogateResult, ClipInterrogation, Config, Customer, DiffusionConfig, DreamboothConfig, DreamboothResult, IOConfig, ImagePrompt, InputImage, Job, Prompt, Result, SelasClient, TextPrompt, TextRank, Token, WorkerConfig, createBackendSelasClient, createSelasClient };
+export { Billing, BlipConfig, BlipResult, ClipInterrogateConfig, ClipInterrogateResult, ClipInterrogation, Config, Customer, DiffusionConfig, DreamboothConfig, DreamboothResult, ImagePrompt, InputImage, Job, Prompt, Result, SelasClient, TextPrompt, TextRank, WorkerConfig, createSelasClient };

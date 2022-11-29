@@ -1,28 +1,29 @@
 const selas_js = require("./dist/index.cjs");
 
-const email = ""
-const password = ""
+// const email = "";
+// const password = "";
 
 const test = async () => {
   const selas = selas_js.createBackendSelasClient();
   const { data: session } = await selas.signIn(email, password);
 
-  const {data:job, error, message} = await selas.runStableDiffusion(
-      "cute cat",
-      512,
-      512,
-      50,
-      15,
-      "ddim",
-      1,
-      "avif",
-      false,
-      model_name="",
-      worker_config = {
-        "branch": "main",
-        "is_dirty": true
-      }
-    );
+  const {
+    data: job,
+    error,
+    message,
+  } = await selas.runStableDiffusion(
+    "cute main coon trending on Artstation",
+    512,
+    512,
+    50,
+    7.5,
+    "ddim",
+    1,
+    "jpg",
+    false,
+    "",
+    { is_dirty: "false", branch: "main" }
+  );
 
   console.log(job, error, message);
   // const {data:job, error, message} = await selas.runClipInterrogate("https://storage.googleapis.com/selas-api/results/3eb82322-ea2e-457d-a778-f3360d2d8611.JPEG");
@@ -44,9 +45,39 @@ const test = async () => {
   // console.log("job", job);
   // console.log("error", error);
 
-
   // selas.getClipInterrogateResult(job.id)
-  
+
+  const fetch_result = (job_id) => new Promise((resolve, reject) => {
+    const interval = setInterval(async () => {
+      const { data: results, error, message } = await selas.getResults(job_id);
+      if (results.length > 0) {
+        clearInterval(interval);
+        resolve(results);
+      }
+    }, 200);
+  });
+
+  await fetch_result(job.id).then((results) => {
+    console.log(results);
+  });
+
+
+
+  //   while (true) {
+  //     setTimeout(async () => {
+  //       const { data, error, message } = await selas.getResults(job_id);
+
+  //       if (data) {
+  //         console.log("results", results);
+  //       }
+  //     }, 1000);
+
+  //     return data;
+  //   }
+  // };
+
+  // await fetch_result(job.id);
+
   // if (job) {
   //   await selas.subscribeToResults(job.id, (data) => {
   //     console.log("data", data);
@@ -55,7 +86,6 @@ const test = async () => {
   // else {
   //   console.log("error", error);
   // }
-}
+};
 
 test();
-
